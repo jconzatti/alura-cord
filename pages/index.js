@@ -9,7 +9,8 @@ import Titulo from '../components/titulo';
 export default function PaginaInicial() {
     //esse é o core do react
     const [username, setUsername] = React.useState('');
-    const [nomeCompletoEndereco, setNomeCompletoEndereco] = React.useState('');
+    const [nomeCompleto, setNomeCompleto] = React.useState('');
+    const [endereco, setEndereco] = React.useState('');
     const [userPicture, setUserPicture] = React.useState(userIcon.src);
     const router = useRouter();
 
@@ -115,15 +116,18 @@ export default function PaginaInicial() {
                                         fetch(url)
                                         .then((resp) => resp.json())
                                         .then(function(data) {
-                                            setNomeCompletoEndereco(data.name+' de '+data.location);
+                                            setNomeCompleto(data.name);
+                                            setEndereco(data.location);
                                         })
                                         .catch(function(error) {
                                             console.log(error);
-                                            setNomeCompletoEndereco('');
+                                            setNomeCompleto('');
+                                            setEndereco('');
                                         });
                                     }else{
                                         setUserPicture(userIcon.src);
-                                        setNomeCompletoEndereco('');
+                                        setNomeCompleto('');
+                                        setEndereco('');
                                     }
 
                                 }
@@ -184,7 +188,20 @@ export default function PaginaInicial() {
                                 }
                             }
                         >
-                            {nomeCompletoEndereco}
+                            {nomeCompleto}
+                        </Text>
+                        <Text
+                            variant="body4"
+                            styleSheet={
+                                {
+                                    color: appConfig.theme.colors.neutrals[200],
+                                    backgroundColor: appConfig.theme.colors.neutrals[900],
+                                    padding: '3px 10px',
+                                    borderRadius: '1000px'
+                                }
+                            }
+                        >
+                            {endereco}
                         </Text>
                     </Box>
                     {/* Photo Area */}
