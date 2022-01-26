@@ -1,58 +1,20 @@
 //Use o comando "npm run dev" no terminal para rodar o projeto no navegador
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
+import React from 'react';
+import {useRouter} from 'next/router';
 import appConfig from '../config.json';
-
-function GlobalStyle() {
-    return (
-        <style global jsx>{`
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                list-style: none;
-            }
-            body {
-                font-family: 'Open Sans', sans-serif;
-            }
-            /* App fit Height */ 
-            html, body, #__next {
-                min-height: 100vh;
-                display: flex;
-                flex: 1;
-            }
-            #__next {
-                flex: 1;
-            }
-            #__next > * {
-                flex: 1;
-            }
-            /* ./App fit Height */ 
-        `}</style>
-    );
-}
-
-function Titulo(props) {
-    const Tag = props.tag || 'h1';
-    return (
-        <>
-        <Tag>{props.children}</Tag>
-        <style jsx>{`
-                ${Tag} {
-                    color: ${appConfig.theme.colors.neutrals['000']};
-                    font-size: 24px;
-                    font-weight: 600;
-                }
-            `}</style>
-        </>
-    );
-}
+import userIcon from '../public/user.png';
+import Titulo from '../components/titulo';
 
 export default function PaginaInicial() {
-    const username = 'jconzatti';
+    //esse é o core do react
+    const [username, setUsername] = React.useState('');
+    const [nomeCompletoEndereco, setNomeCompletoEndereco] = React.useState('');
+    const [userPicture, setUserPicture] = React.useState(userIcon.src);
+    const router = useRouter();
 
     return (
         <>
-            <GlobalStyle />
             <Box
                 styleSheet={
                     {
@@ -60,7 +22,7 @@ export default function PaginaInicial() {
                         alignItems: 'center', 
                         justifyContent: 'center',
                         backgroundColor: appConfig.theme.colors.primary[500],
-                        //backgroundImage: 'url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)',
+                        backgroundImage: 'url(https://miro.medium.com/max/1400/1*cEuSobgTBmXiYLxbK6x0Dg.jpeg)',
                         backgroundRepeat: 'no-repeat', 
                         backgroundSize: 'cover', 
                         backgroundBlendMode: 'multiply',
@@ -74,11 +36,14 @@ export default function PaginaInicial() {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             flexDirection: {
-                            xs: 'column',
-                            sm: 'row',
+                                xs: 'column',
+                                sm: 'row',
                             },
-                            width: '100%', maxWidth: '700px',
-                            borderRadius: '5px', padding: '32px', margin: '16px',
+                            width: '100%', 
+                            maxWidth: '700px',
+                            borderRadius: '5px', 
+                            padding: '32px', 
+                            margin: '16px',
                             boxShadow: '0 2px 10px 0 rgb(0 0 0 / 20%)',
                             backgroundColor: appConfig.theme.colors.neutrals[700],
                         }
@@ -87,6 +52,17 @@ export default function PaginaInicial() {
                     {/* Formulário */}
                     <Box
                         as="form"
+                        onSubmit={
+                            function(event){
+                                //para NÃO recarregar a página
+                                event.preventDefault(); 
+                                //ir para a próxima página sem recarregar
+                                router.push('/chat');
+
+                                //Maneira default de mudar de página (realiza re carregamento)
+                                //window.location.href = '/chat'
+                            }
+                        }
                         styleSheet={
                             {
                                 display: 'flex', 
@@ -102,7 +78,7 @@ export default function PaginaInicial() {
                             }
                         }
                     >
-                        <Titulo tag="h2">Boas vindas de volta!</Titulo>
+                        <Titulo tag="h2">Bem vindo de volta!</Titulo>
                         <Text 
                             variant="body3" 
                             styleSheet={
@@ -124,7 +100,32 @@ export default function PaginaInicial() {
                                         mainColor: appConfig.theme.colors.neutrals[900],
                                         mainColorHighlight: appConfig.theme.colors.primary[500],
                                         backgroundColor: appConfig.theme.colors.neutrals[800],
-                                    },
+                                    }
+                                }
+                            }
+                            value={username}
+                            onChange={
+                                function (event){
+                                    const usernameValue = event.target.value;
+                                    setUsername(usernameValue);
+                                    if (usernameValue.length > 2){
+                                        setUserPicture(`https://github.com/${usernameValue}.png`);
+
+                                        const url = `https://api.github.com/users/${usernameValue}`;
+                                        fetch(url)
+                                        .then((resp) => resp.json())
+                                        .then(function(data) {
+                                            setNomeCompletoEndereco(data.name+' de '+data.location);
+                                        })
+                                        .catch(function(error) {
+                                            console.log(error);
+                                            setNomeCompletoEndereco('');
+                                        });
+                                    }else{
+                                        setUserPicture(userIcon.src);
+                                        setNomeCompletoEndereco('');
+                                    }
+
                                 }
                             }
                         />
@@ -170,7 +171,7 @@ export default function PaginaInicial() {
                                     marginBottom: '16px',
                                 }
                             }
-                            src={`https://github.com/${username}.png`}
+                            src={userPicture}
                         />
                         <Text
                             variant="body4"
@@ -183,7 +184,7 @@ export default function PaginaInicial() {
                                 }
                             }
                         >
-                            {username}
+                            {nomeCompletoEndereco}
                         </Text>
                     </Box>
                     {/* Photo Area */}
