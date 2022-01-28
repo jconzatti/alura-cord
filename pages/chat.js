@@ -2,10 +2,38 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
 import trashIcon from '../public/trash.png';
+import { createClient } from '@supabase/supabase-js'
+
+const SUPABASE_ANON_KEY ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMyODQyNiwiZXhwIjoxOTU4OTA0NDI2fQ.N1EiE98q6fisFKMAj_el1WUUmQP45YjAzi45gSdHPGM';
+const SUPABASE_URL = 'https://kurkxabpwldivpagmjhp.supabase.co';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
+
+    React.useEffect(
+        function(){
+            supabase.from('TBMensagem').select('*').order('CdMensagem', {ascending: false}).then(
+                function({data}){ //{data} equivale a param.data
+                    const aListaMensagem = [];
+                    data.forEach(
+                        function(aMensagem){
+                            aListaMensagem.push(
+                                {
+                                    id: aMensagem.CdMensagem,
+                                    de: aMensagem.DsUsuario,
+                                    texto: aMensagem.DsMensagem
+                                }
+                            )
+                        }
+                    );
+                    setListaDeMensagens(aListaMensagem);
+                }
+            );
+        },
+        []
+    );
 
     /*
     // Usuário
@@ -18,17 +46,30 @@ export default function ChatPage() {
     - [X] Vamos usar o onChange usa o useState (ter if pra caso seja enter pra limpar a variavel)
     - [X] Lista de mensagens 
     */
+
+
     function handleNovaMensagem(novaMensagem) {
-        const mensagem = {
-            id: listaDeMensagens.length + 1,
-            de: 'Jhoni Conzatti',
-            texto: novaMensagem,
+        const aMensagem = {
+            DsUsuario: 'peas',
+            DsMensagem: novaMensagem
         };
 
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens,
-        ]);
+        supabase.from('TBMensagem').insert([aMensagem]).then(
+            function(response){
+                console.log(response);
+                setListaDeMensagens(
+                    [
+                        {
+                            id: response.data[0].CdMensagem,
+                            de: response.data[0].DsUsuario,
+                            texto: response.data[0].DsMensagem,
+                        },
+                        ...listaDeMensagens,
+                    ]
+                );
+            }
+        );
+
         setMensagem('');
     }
 
@@ -206,7 +247,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/jconzatti.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
@@ -215,32 +256,29 @@ function MessageList(props) {
                                 styleSheet={{
                                     fontSize: '10px',
                                     marginLeft: '8px',
-                                    color: appConfig.theme.colors.neutrals[300],
+                                    color: appConfig.theme.colors.primary[500],
                                 }}
                                 tag="span"
                             >
                                 {(new Date().toLocaleDateString())}
                             </Text>
                             <Image
-                                id={mensagem.id}
                                 styleSheet={{
-                                    width: '30px',
-                                    height: '30px',
+                                    width: '25px',
+                                    height: '25px',
                                     borderRadius: '50%',
                                     display: 'inline-block',
-                                    marginRight: '8px',
-                                    float: 'right'
+                                    marginLeft: '12px'
                                 }}
                                 src={trashIcon.src}
                                 onClick={
-                                    (event) => {
+                                    function(){
                                         const listaDeMensagensNova = props.mensagens.filter(
                                             function (msg) {
-                                                return msg.id != event.target.id;
+                                                return msg.id != mensagem.id;
                                             }
                                         );
                                         props.setMensagens(listaDeMensagensNova);
-                                        console.log(props.mensagens); 
                                     }
                                 }
                             />

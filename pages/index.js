@@ -114,16 +114,24 @@ export default function PaginaInicial() {
 
                                         const url = `https://api.github.com/users/${usernameValue}`;
                                         fetch(url)
-                                        .then((resp) => resp.json())
-                                        .then(function(data) {
-                                            setNomeCompleto(data.name);
-                                            setEndereco(data.location);
-                                        })
-                                        .catch(function(error) {
-                                            console.log(error);
-                                            setNomeCompleto('');
-                                            setEndereco('');
-                                        });
+                                        .then(
+                                            async function(resp){
+                                                return await resp.json()
+                                            }
+                                        )
+                                        .then(
+                                            function(data) {
+                                                setNomeCompleto(data.name);
+                                                setEndereco(data.location);
+                                            }
+                                        )
+                                        .catch(
+                                            function(error) {
+                                                console.log(error);
+                                                setNomeCompleto('');
+                                                setEndereco('');
+                                            }
+                                        );
                                     }else{
                                         setUserPicture(userIcon.src);
                                         setNomeCompleto('');
