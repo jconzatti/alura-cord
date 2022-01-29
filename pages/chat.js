@@ -2,7 +2,9 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
 import trashIcon from '../public/trash.png';
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import {useRouter} from 'next/router';
+import {ButtonSendSticker} from '../components/ButtonSendSticker';
 
 const SUPABASE_ANON_KEY ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMyODQyNiwiZXhwIjoxOTU4OTA0NDI2fQ.N1EiE98q6fisFKMAj_el1WUUmQP45YjAzi45gSdHPGM';
 const SUPABASE_URL = 'https://kurkxabpwldivpagmjhp.supabase.co';
@@ -11,9 +13,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 export default function ChatPage() {
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
+    const router = useRouter();
+    const usuarioLogado = router.query.username;//o usuário logado é passado na url do chat
 
     React.useEffect(
         function(){
+            //carrega todas as mensagens na tela, acontece apenas quando a tela é carregada
             supabase.from('TBMensagem').select('*').order('CdMensagem', {ascending: false}).then(
                 function({data}){ //{data} equivale a param.data
                     const aListaMensagem = [];
@@ -31,6 +36,42 @@ export default function ChatPage() {
                     setListaDeMensagens(aListaMensagem);
                 }
             );
+            
+            //registra o evento que deve acontecer no client quando um registro é inserido no server
+            const subscribeInsertForTBMensagem = supabase.from('TBMensagem').on(
+                'INSERT',
+                function(data){
+                    // Quero reusar um valor de referencia (objeto/array) 
+                    // Passar uma função pro setState
+                    //setListaDeMensagens(
+                    //    [
+                    //        {
+                    //            id: data.new.CdMensagem,
+                    //            de: data.new.DsUsuario,
+                    //            texto: data.new.DsMensagem,
+                    //        },
+                    //        ...listaDeMensagens,
+                    //    ]
+                    //);
+                    setListaDeMensagens(
+                        function (atualValueOfListaMensagem){
+                            return [
+                                {
+                                    id: data.new.CdMensagem,
+                                    de: data.new.DsUsuario,
+                                    texto: data.new.DsMensagem,
+                                },
+                                ...atualValueOfListaMensagem,
+                            ]
+                        }
+                    );
+                }
+            ).subscribe();
+            
+            //o retorno é a função que é disparada quado a página é descarregada
+            return function(){
+                subscribeInsertForTBMensagem.unsubscribe(); 
+            }
         },
         []
     );
@@ -50,25 +91,13 @@ export default function ChatPage() {
 
     function handleNovaMensagem(novaMensagem) {
         const aMensagem = {
-            DsUsuario: 'peas',
+            DsUsuario: usuarioLogado,
             DsMensagem: novaMensagem
         };
 
-        supabase.from('TBMensagem').insert([aMensagem]).then(
-            function(response){
-                console.log(response);
-                setListaDeMensagens(
-                    [
-                        {
-                            id: response.data[0].CdMensagem,
-                            de: response.data[0].DsUsuario,
-                            texto: response.data[0].DsMensagem,
-                        },
-                        ...listaDeMensagens,
-                    ]
-                );
-            }
-        );
+        //vai adicionar a mensagem no banco,
+        //quando é adicionada o evento de atualização de lista em mensagens é disparado
+        supabase.from('TBMensagem').insert([aMensagem]).then();
 
         setMensagem('');
     }
@@ -164,6 +193,19 @@ export default function ChatPage() {
                                     handleNovaMensagem(mensagem);
                                 }
                             }
+                            styleSheet={
+                                {
+                                    marginRight: '12px'
+                                }
+                            }
+                        />
+
+                        <ButtonSendSticker
+                            onStickerClick = {
+                                function (sticker){
+                                    handleNovaMensagem(':sticker:'+sticker)  
+                                }
+                            }
                         />
                     </Box>
                 </Box>
@@ -208,6 +250,24 @@ function Header() {
 }
 
 function MessageList(props) {
+
+    function getStickerOrText(DesTexto){
+        if (DesTexto.startsWith(':sticker:')){
+            return (
+                <Image 
+                    styleSheet={
+                        {
+                            maxHeight: '120px',
+                            maxWidth: '200px'
+                        }
+                    }
+                    src={DesTexto.replace(':sticker:', '')}
+                />
+            );
+        }
+        return DesTexto;
+    }
+
     return (
         <Box
             tag="ul"
@@ -283,7 +343,7 @@ function MessageList(props) {
                                 }
                             />
                         </Box>
-                        {mensagem.texto}
+                        {getStickerOrText(mensagem.texto)}
                     </Text>
                 );
             })}

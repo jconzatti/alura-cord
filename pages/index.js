@@ -58,7 +58,7 @@ export default function PaginaInicial() {
                                 //para NÃO recarregar a página
                                 event.preventDefault(); 
                                 //ir para a próxima página sem recarregar
-                                router.push('/chat');
+                                router.push(`/chat?username=${username}`);
 
                                 //Maneira default de mudar de página (realiza re carregamento)
                                 //window.location.href = '/chat'
